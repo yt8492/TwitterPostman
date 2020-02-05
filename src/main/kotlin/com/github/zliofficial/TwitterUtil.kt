@@ -7,6 +7,9 @@ import twitter4j.auth.RequestToken
 import java.io.File
 
 object TwitterUtil {
+    private const val FILE_NAME_ACCESS_TOKEN = "AccessToken.dat"
+    private const val FILE_NAME_REQUEST_TOKEN = "RequestToken.dat"
+
     private val twitter = TwitterFactory.getSingleton().apply {
         val accessToken = getAccessToken()
         if (accessToken != null) {
@@ -42,7 +45,7 @@ object TwitterUtil {
     }
 
     private fun getOrCreateRequestToken(): RequestToken {
-        val file = File("RequestToken.data")
+        val file = File(FILE_NAME_REQUEST_TOKEN)
         return if (file.exists()) {
             file.useLines {
                 val lines = it.toList()
@@ -72,7 +75,7 @@ object TwitterUtil {
     }
 
     private fun getAccessToken(): AccessToken? {
-        val file = File("AccessToken.dat")
+        val file = File(FILE_NAME_ACCESS_TOKEN)
         return if (file.exists()) {
             file.useLines {
                 val lines = it.toList()
@@ -89,7 +92,7 @@ object TwitterUtil {
     }
 
     private fun saveAccessToken(accessToken: AccessToken) {
-        val file = File("AccessTokens.dat")
+        val file = File(FILE_NAME_ACCESS_TOKEN)
         if (file.exists()) {
             file.delete()
         }
