@@ -27,7 +27,7 @@ object TwitterUtil {
         saveAccessToken(accessToken)
     }
 
-    fun post(text: String, medias: List<Media>) {
+    fun post(text: String, medias: List<Media> = listOf()) {
         val status = if (medias.isEmpty()) {
             StatusUpdate(text)
         } else if (medias.size == 1) {
