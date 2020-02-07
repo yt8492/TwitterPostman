@@ -2,16 +2,14 @@ package com.github.zliofficial
 
 import com.github.seratch.jslack.api.model.Message
 import com.github.seratch.jslack.api.model.event.AppMentionEvent
-import com.github.seratch.jslack.lightning.App
 import com.github.seratch.jslack.lightning.context.builtin.DefaultContext
 import com.vdurmont.emoji.EmojiParser
 import io.ktor.util.KtorExperimentalAPI
 import kotlinx.coroutines.*
-import twitter4j.TwitterException
 import java.util.concurrent.Executors
 
 @KtorExperimentalAPI
-class MentionRouter(private val app: App) {
+class MentionRouter {
 
     private val dispatcher = Executors.newCachedThreadPool().asCoroutineDispatcher()
 
@@ -26,29 +24,29 @@ class MentionRouter(private val app: App) {
                 client.chatPostMessage {
                     it.token(context.botToken)
                     it.channel(event.channel)
-                    it.text(authorizationUrl)
+                    it.text("ログインURL :$authorizationUrl")
                     it.threadTs(event.threadTs ?: event.ts)
                 }
             }
             return@launch
-        } else if (event.text.matches("""\d+""".toRegex())) {
+        } else if (event.text.matches(pinPhrase)) {
             try {
-                val pin = """\d+""".toRegex().find(event.text)?.value ?: return@launch
+                val pin = """\d+""".toRegex().findAll(event.text).lastOrNull()?.value ?: return@launch
                 TwitterUtil.setPin(pin)
                 withContext(Dispatchers.IO) {
                     client.chatPostMessage {
                         it.token(context.botToken)
                         it.channel(event.channel)
-                        it.text("ログインに成功しました")
+                        it.text("ログインに成功しました。")
                         it.threadTs(event.threadTs ?: event.ts)
                     }
                 }
-            } catch (te: TwitterException) {
+            } catch (e: Exception) {
                 withContext(Dispatchers.IO) {
                     client.chatPostMessage {
                         it.token(context.botToken)
                         it.channel(event.channel)
-                        it.text("ログインに失敗しました")
+                        it.text("ログインに失敗しました。")
                         it.threadTs(event.threadTs ?: event.ts)
                     }
                 }
@@ -60,7 +58,7 @@ class MentionRouter(private val app: App) {
                 client.chatPostMessage {
                     it.token(context.botToken)
                     it.channel(event.channel)
-                    it.text("ツイートしたい内容のメッセージのスレッドに書いて下さい")
+                    it.text("ツイートしたい内容のメッセージのスレッドに書いて下さい。")
                 }
             }
         } else if (event.text.matches(postPhrase)) {
@@ -73,26 +71,48 @@ class MentionRouter(private val app: App) {
             }
             val threadRoot = threadMessages[0]
             val parsedMessage = EmojiParser.parseToUnicode(threadRoot.text)
+            threadRoot.text = parsedMessage
             if (parsedMessage.length > 140) {
                 withContext(Dispatchers.IO) {
                     client.chatPostMessage {
                         it.token(context.botToken)
                         it.channel(event.channel)
-                        it.text("140文字以上です")
+                        it.text("140文字以上です。")
                         it.threadTs(event.threadTs)
                     }
                 }
                 return@launch
             }
-
+            try {
+                post(threadRoot, context.botToken)
+                withContext(Dispatchers.IO) {
+                    client.chatPostMessage {
+                        it.token(context.botToken)
+                        it.channel(event.channel)
+                        it.text("${threadRoot.text}と投稿しました。")
+                        it.threadTs(event.threadTs)
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                withContext(Dispatchers.IO) {
+                    client.chatPostMessage {
+                        it.token(context.botToken)
+                        it.channel(event.channel)
+                        it.text("ツイートに失敗しました。再ログインしてください。")
+                        it.threadTs(event.threadTs)
+                    }
+                }
+            }
         }
     }
 
-    private suspend fun post(message: Message) {
-        val imageStreams = message.files.map {
-            ImageUtil.getInputStreamFromUrl(it.urlPrivate)
-        }
+    private suspend fun post(message: Message, token: String) {
+        val medias = message.files?.map {
+            Media(it.name, ImageUtil.getInputStreamFromUrl(it.urlPrivate, token))
+        } ?: listOf()
 
+        TwitterUtil.post(message.text, medias)
     }
 
     companion object {
@@ -103,14 +123,27 @@ class MentionRouter(private val app: App) {
             "つぶやく",
             "呟いて",
             "つぶやいて",
+            "ツイート",
             "Tweet",
             "tweet"
-        ).joinToString("|").toRegex()
+        ).joinToString("|").let {
+            ".*($it).*"
+        }.toRegex()
 
         private val loginPhrase = listOf(
             "ログイン",
             "login",
             "Login"
-        ).joinToString("|").toRegex()
+        ).joinToString("|").let {
+            ".*($it).*"
+        }.toRegex()
+
+        private val pinPhrase = listOf(
+            "pin",
+            "Pin",
+            "ピン"
+        ).joinToString("|").let {
+            ".*($it).*"
+        }.toRegex()
     }
 }

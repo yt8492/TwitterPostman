@@ -1,36 +1,23 @@
 package com.github.zliofficial
 
-import twitter4j.TwitterException
-import twitter4j.TwitterFactory
-import twitter4j.auth.AccessToken
+import com.github.seratch.jslack.api.model.event.AppMentionEvent
+import com.github.seratch.jslack.lightning.App
+import com.github.seratch.jslack.lightning.jetty.SlackAppServer
+import io.ktor.util.KtorExperimentalAPI
+import kotlinx.coroutines.runBlocking
 
+@KtorExperimentalAPI
 fun main() {
-//    val twitter = TwitterFactory.getSingleton()
-//    val requestToken = twitter.getOAuthRequestToken("oob")
-//    var accessToken: AccessToken? = null
-//    while (accessToken == null) {
-//        println(requestToken.authorizationURL)
-//        try {
-//            val pin = readLine()
-//            accessToken = twitter.getOAuthAccessToken(requestToken, pin)
-//            println(accessToken.screenName)
-//        } catch (te: TwitterException) {
-//            if (te.statusCode == 401) {
-//                println("Unable to get the access token")
-//            } else {
-//                te.printStackTrace()
-//            }
-//        }
-//    }
-//    twitter.updateStatus(readLine())
-    val input = readLine() ?: return
-    try {
-        TwitterUtil.post(input, listOf())
-    } catch (e: Exception) {
-        e.printStackTrace()
-        println(TwitterUtil.getAuthorizationUrl())
-        val pin = readLine() ?: return
-        TwitterUtil.setPin(pin)
-        TwitterUtil.post(input, listOf())
+    val app = App()
+    val mentionRouter = MentionRouter()
+    app.event(AppMentionEvent::class.java) { event, context ->
+        println(event.event)
+        runBlocking {
+            mentionRouter.route(event.event, context).join()
+        }
+        context.ack()
     }
+    val server= SlackAppServer(app, 8080)
+    println("server start")
+    server.start()
 }

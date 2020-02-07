@@ -30,9 +30,6 @@ object TwitterUtil {
     fun post(text: String, medias: List<Media> = listOf()) {
         val status = if (medias.isEmpty()) {
             StatusUpdate(text)
-        } else if (medias.size == 1) {
-            val media = medias.first()
-            StatusUpdate(text).media(media.name, media.body)
         } else {
             val mediaIds = medias.take(4).map {
                 twitter.uploadMedia(it.name, it.body).mediaId
