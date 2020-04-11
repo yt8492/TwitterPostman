@@ -24,10 +24,13 @@ class MentionRouter {
                 client.chatPostMessage {
                     it.token(context.botToken)
                     it.channel(event.channel)
-                    it.text("ログインURL :$authorizationUrl")
+                    it.text("ログインURL: $authorizationUrl")
                     it.threadTs(event.threadTs ?: event.ts)
                 }
             }
+            return@launch
+        } else if (event.text.matches(logoutPhrase)) {
+            TwitterUtil.logout()
             return@launch
         } else if (event.text.matches(pinPhrase)) {
             try {
@@ -134,6 +137,14 @@ class MentionRouter {
             "ログイン",
             "login",
             "Login"
+        ).joinToString("|").let {
+            ".*($it).*"
+        }.toRegex()
+
+        private val logoutPhrase = listOf(
+            "ログアウト",
+            "logout",
+            "Logout"
         ).joinToString("|").let {
             ".*($it).*"
         }.toRegex()

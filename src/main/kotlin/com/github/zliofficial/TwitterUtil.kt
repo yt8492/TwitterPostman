@@ -41,6 +41,14 @@ object TwitterUtil {
         twitter.updateStatus(status)
     }
 
+    fun logout() {
+        val requestTokenFile = File(FILE_NAME_REQUEST_TOKEN)
+        val accessTokenFile = File(FILE_NAME_ACCESS_TOKEN)
+        requestTokenFile.deleteOnExit()
+        accessTokenFile.deleteOnExit()
+        twitter.oAuthAccessToken = null
+    }
+
     private fun getOrCreateRequestToken(): RequestToken {
         val file = File(FILE_NAME_REQUEST_TOKEN)
         return if (file.exists()) {
