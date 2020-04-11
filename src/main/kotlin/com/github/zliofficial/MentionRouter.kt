@@ -6,6 +6,7 @@ import com.github.seratch.jslack.lightning.context.builtin.DefaultContext
 import com.vdurmont.emoji.EmojiParser
 import io.ktor.util.KtorExperimentalAPI
 import kotlinx.coroutines.*
+import org.slf4j.LoggerFactory
 import java.util.concurrent.Executors
 
 @KtorExperimentalAPI
@@ -17,8 +18,10 @@ class MentionRouter {
         event: AppMentionEvent,
         context: DefaultContext
     ): Job = CoroutineScope(dispatcher).launch {
+        println("MentionRouter start")
         val client = context.client()
         if (event.text.matches(loginPhrase)) {
+            println("Login start")
             val authorizationUrl = TwitterUtil.getAuthorizationUrl()
             withContext(Dispatchers.IO) {
                 client.chatPostMessage {
@@ -28,11 +31,23 @@ class MentionRouter {
                     it.threadTs(event.threadTs ?: event.ts)
                 }
             }
+            println("Login success")
             return@launch
         } else if (event.text.matches(logoutPhrase)) {
+            println("Logout start")
             TwitterUtil.logout()
+            withContext(Dispatchers.IO) {
+                client.chatPostMessage {
+                    it.token(context.botToken)
+                    it.channel(event.channel)
+                    it.text("ログアウトしました。")
+                    it.threadTs(event.threadTs ?: event.ts)
+                }
+            }
+            println("Logout success")
             return@launch
         } else if (event.text.matches(pinPhrase)) {
+            println("Set pin start")
             try {
                 val pin = """\d+""".toRegex().findAll(event.text).lastOrNull()?.value ?: return@launch
                 TwitterUtil.setPin(pin)
@@ -44,6 +59,7 @@ class MentionRouter {
                         it.threadTs(event.threadTs ?: event.ts)
                     }
                 }
+                println("Set pin success")
             } catch (e: Exception) {
                 withContext(Dispatchers.IO) {
                     client.chatPostMessage {
@@ -53,6 +69,7 @@ class MentionRouter {
                         it.threadTs(event.threadTs ?: event.ts)
                     }
                 }
+                println("Set pin failed")
             }
             return@launch
         }
@@ -65,6 +82,7 @@ class MentionRouter {
                 }
             }
         } else if (event.text.matches(postPhrase)) {
+            println("Post tweet start")
             val threadMessages = withContext(Dispatchers.IO) {
                 client.channelsHistory {
                     it.channel(event.channel)
@@ -84,6 +102,7 @@ class MentionRouter {
                         it.threadTs(event.threadTs)
                     }
                 }
+                println("Tweet length over 140")
                 return@launch
             }
             try {
@@ -96,6 +115,7 @@ class MentionRouter {
                         it.threadTs(event.threadTs)
                     }
                 }
+                println("Post tweet success")
             } catch (e: Exception) {
                 e.printStackTrace()
                 withContext(Dispatchers.IO) {
@@ -106,6 +126,7 @@ class MentionRouter {
                         it.threadTs(event.threadTs)
                     }
                 }
+                println("Post tweet failed")
             }
         }
     }
