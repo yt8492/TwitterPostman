@@ -43,8 +43,12 @@ object TwitterUtil {
     fun logout() {
         val requestTokenFile = File(FILE_NAME_REQUEST_TOKEN)
         val accessTokenFile = File(FILE_NAME_ACCESS_TOKEN)
-        requestTokenFile.deleteOnExit()
-        accessTokenFile.deleteOnExit()
+        if (requestTokenFile.exists()) {
+            requestTokenFile.delete()
+        }
+        if (accessTokenFile.exists()) {
+            accessTokenFile.delete()
+        }
         twitter.oAuthAccessToken = null
     }
 
@@ -52,7 +56,7 @@ object TwitterUtil {
         val file = File(FILE_NAME_REQUEST_TOKEN)
         return if (file.exists()) {
             file.useLines {
-                val lines = it.toList()
+                val lines = it.filter(String::isBlank).toList()
                 if (lines.size == 2) {
                     val (token, tokenSecret) = lines
                     RequestToken(token, tokenSecret)
@@ -82,7 +86,7 @@ object TwitterUtil {
         val file = File(FILE_NAME_ACCESS_TOKEN)
         return if (file.exists()) {
             file.useLines {
-                val lines = it.toList()
+                val lines = it.filter(String::isBlank).toList()
                 if (lines.size == 2) {
                     val (token, tokenSecret) = lines
                     AccessToken(token, tokenSecret)
