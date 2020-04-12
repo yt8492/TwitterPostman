@@ -10,7 +10,7 @@ object TwitterUtil {
     private const val FILE_NAME_ACCESS_TOKEN = "AccessToken.dat"
     private const val FILE_NAME_REQUEST_TOKEN = "RequestToken.dat"
 
-    private var requestToken = getOrCreateRequestToken()
+    private lateinit var requestToken: RequestToken
 
     private val twitter = TwitterFactory.getSingleton().apply {
         val accessToken = getAccessToken()
@@ -20,6 +20,7 @@ object TwitterUtil {
     }
 
     fun getAuthorizationUrl(): String {
+        requestToken = getOrCreateRequestToken()
         return requestToken.authorizationURL
     }
 
@@ -52,7 +53,6 @@ object TwitterUtil {
             accessTokenFile.delete()
         }
         twitter.oAuthAccessToken = null
-        requestToken = getOrCreateRequestToken()
     }
 
     private fun getOrCreateRequestToken(): RequestToken {
