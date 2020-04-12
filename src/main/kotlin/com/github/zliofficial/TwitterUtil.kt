@@ -16,14 +16,13 @@ object TwitterUtil {
             oAuthAccessToken = accessToken
         }
     }
-    private val requestToken = getOrCreateRequestToken()
 
     fun getAuthorizationUrl(): String {
-        return requestToken.authorizationURL
+        return getOrCreateRequestToken().authorizationURL
     }
 
     fun setPin(pin: String) {
-        val accessToken = twitter.getOAuthAccessToken(requestToken, pin)
+        val accessToken = twitter.getOAuthAccessToken(getOrCreateRequestToken(), pin)
         saveAccessToken(accessToken)
     }
 
