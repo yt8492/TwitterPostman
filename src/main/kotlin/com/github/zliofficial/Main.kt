@@ -19,7 +19,6 @@ fun main() {
         }
         context.ack()
     }
-    val sslContextFactory = SslContextFactory()
     val server= SlackAppServer(app, 8080)
     println("server start")
     server.start()

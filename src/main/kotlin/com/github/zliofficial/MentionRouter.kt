@@ -128,6 +128,18 @@ class MentionRouter {
                 }
                 println("Post tweet failed")
             }
+        } else if (event.text.contains(" echo ")) {
+            val splitText = event.text.split(" ")
+            val echoIndex = splitText.indexOf("echo")
+            val text = splitText.drop(echoIndex + 1).joinToString(" ")
+            withContext(Dispatchers.IO) {
+                client.chatPostMessage {
+                    it.token(context.botToken)
+                    it.channel(event.channel)
+                    it.text(text)
+                    it.threadTs(event.threadTs)
+                }
+            }
         }
     }
 
