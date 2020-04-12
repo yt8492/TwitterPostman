@@ -65,7 +65,7 @@ class MentionRouter {
                     client.chatPostMessage {
                         it.token(context.botToken)
                         it.channel(event.channel)
-                        it.text("ログインに失敗しました。")
+                        it.text("ログインに失敗しました。\n${e.message}")
                         it.threadTs(event.threadTs ?: event.ts)
                     }
                 }
