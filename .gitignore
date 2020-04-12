@@ -3,3 +3,7 @@
 /build/
 /out/
 /out/production/classes/
+serve.sh
+twitter4j.properties
+AccessToken.dat
+RequestToken.dat
